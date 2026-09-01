@@ -1,0 +1,27 @@
+---
+description: Ban real PHI from prompts, commits, logs, and test fixtures — synthetic data only
+alwaysApply: true
+---
+
+# No real patient data (PHI)
+
+Never put real patient data in this repo or in anything written while working in it.
+
+Forbidden in prompts, commits, logs, comments, screenshots, fixtures, mocks, and sample payloads:
+
+- Real patient names
+- Medical record numbers (MRNs)
+- Dates of birth
+- Any other real identifiers or clinical facts tied to a real person
+
+Use synthetic data only. Invented names, fake MRNs, and made-up dates are required.
+
+```ts
+// BAD — real or production-looking patient identity
+const patient = { name: 'Maria Santos', mrn: 'EHR-88421', birthDate: '1974-03-12' };
+
+// GOOD — clearly synthetic fixture
+const patient = { name: 'Jane Doe', mrn: 'MRN-0001', birthDate: '1990-01-01' };
+```
+
+If real PHI appears in an error, log, or paste, do not repeat it. Redact and replace with synthetic values before committing or continuing.
