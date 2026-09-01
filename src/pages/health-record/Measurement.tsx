@@ -43,8 +43,6 @@ export function Measurement(): JSX.Element | null {
   }, [chartDatasets, observations]);
 
   function addObservation(formData: Record<string, string>): void {
-    console.log(formData);
-
     const obs: Observation = {
       resourceType: 'Observation',
       status: 'preliminary',
