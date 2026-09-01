@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: Copyright Orangebot, Inc. and Medplum contributors
 // SPDX-License-Identifier: Apache-2.0
 import { Alert, Loader } from '@mantine/core';
-import type { Appointment, Bundle, HealthcareService, Patient, Reference, Slot } from '@medplum/fhirtypes';
+import type { Appointment, Bundle, HealthcareService, Reference, Slot } from '@medplum/fhirtypes';
 import { createReference, getExtensionValue, getReferenceString, isDefined, normalizeErrorString } from '@medplum/core';
 import { Document, BaseScheduler, useMedplum } from '@medplum/react';
 import type { FetchOptionsFunction } from '@medplum/react';
@@ -9,12 +9,18 @@ import { useSearchOne } from '@medplum/react-hooks';
 import { IconInfoCircle } from '@tabler/icons-react';
 import { useCallback, useMemo, useState } from 'react';
 import type { JSX } from 'react';
+import {
+  getBookingHoldBlockReason,
+  INELIGIBLE_PATIENT_MESSAGE,
+  isPatientEligibleForBooking,
+} from '../config/careAvailability';
 
 const SERVICE_TYPE_REFERENCE_URI = 'https://medplum.com/fhir/service-type-reference';
 
 export function GetCare(): JSX.Element {
   const medplum = useMedplum();
-  const patient = medplum.getProfile() as Patient;
+  const profile = medplum.getProfile();
+  const patient = profile?.resourceType === 'Patient' ? profile : undefined;
   const [schedule, loading] = useSearchOne('Schedule');
 
   const healthcareServiceRef = useMemo(
@@ -60,6 +66,17 @@ export function GetCare(): JSX.Element {
   const [holdError, setHoldError] = useState<unknown>();
 
   const holdAppointment = async (appointment: Appointment): Promise<void> => {
+    const slotStart = appointment.start ? new Date(appointment.start) : undefined;
+    const blockReason = getBookingHoldBlockReason(patient, slotStart);
+    if (blockReason) {
+      setHoldSuccess(false);
+      setHoldError(blockReason);
+      return;
+    }
+    if (!patient) {
+      return;
+    }
+
     // Add the viewer to the appointment as a participant
     const booking = {
       ...appointment,
@@ -73,6 +90,7 @@ export function GetCare(): JSX.Element {
     };
 
     setHoldLoading(true);
+    setHoldError(undefined);
     await medplum
       .post<Bundle<Appointment | Slot>>(medplum.fhirUrl('Appointment', '$hold'), {
         resourceType: 'Parameters',
@@ -89,6 +107,16 @@ export function GetCare(): JSX.Element {
     return (
       <Document width={800}>
         <Loader />
+      </Document>
+    );
+  }
+
+  if (!isPatientEligibleForBooking(patient)) {
+    return (
+      <Document width={800}>
+        <Alert variant="outline" color="red" title="Booking unavailable" icon={<IconInfoCircle />}>
+          {INELIGIBLE_PATIENT_MESSAGE}
+        </Alert>
       </Document>
     );
   }
@@ -120,7 +148,7 @@ export function GetCare(): JSX.Element {
       <BaseScheduler actor={actor} fetchOptions={fetchAppointments} onSelectOption={holdAppointment}>
         {holdLoading && <Loader />}
         {!!holdError && (
-          <Alert variant="outline" color="red" title="Hold failed" icon={<IconInfoCircle />}>
+          <Alert variant="outline" color="red" title="Booking unavailable" icon={<IconInfoCircle />}>
             {normalizeErrorString(holdError)}
           </Alert>
         )}

@@ -1,0 +1,23 @@
+---
+description: Get Care scheduling changes must not modify the authentication check in App.tsx
+globs: src/pages/GetCarePage.tsx
+alwaysApply: false
+---
+
+# Get Care must not touch authentication
+
+Changes to `src/pages/GetCarePage.tsx` must not modify the authentication check in `src/App.tsx`.
+
+The signed-in gate is `medplum.getProfile()` in `src/App.tsx`. Leave it alone.
+
+Hours, eligibility, slot filtering, and booking rules belong in `GetCarePage.tsx` (`fetchAppointments`, pre-`BaseScheduler` guards, `holdAppointment`) — not in `App.tsx`.
+
+```tsx
+// BAD — mixing scheduling work with the login gate
+if (!medplum.getProfile() || !patient.isEligible) { ... }
+
+// GOOD — keep App.tsx as profile-present vs not; put booking policy in GetCarePage.tsx
+if (!medplum.getProfile()) {
+  return <PublicRoutes />;
+}
+```
