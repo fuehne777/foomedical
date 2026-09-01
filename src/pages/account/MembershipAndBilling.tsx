@@ -39,7 +39,11 @@ export function MembershipAndBilling(): JSX.Element {
       beneficiary: getReferenceString(patient),
     })
     .read();
-  const payments = medplum.searchResources('PaymentNotice').read();
+  const payments = medplum
+    .searchResources('PaymentNotice', {
+      'request:Claim.patient': getReferenceString(patient),
+    })
+    .read();
 
   return (
     <Box p="xl">

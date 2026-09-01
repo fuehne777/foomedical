@@ -125,7 +125,12 @@ export function HomePage(): JSX.Element {
           <Title className={classes.heroTitle}>
             Hi <span className="text-teal-600">{profileName}</span>,<br /> we’re here to help
           </Title>
-          <Button size="xl" radius="xl" className={classes.heroButton}>
+          <Button
+            size="xl"
+            radius="xl"
+            className={classes.heroButton}
+            onClick={() => navigate('/get-care')?.catch(console.error)}
+          >
             Get Care
           </Button>
         </Container>

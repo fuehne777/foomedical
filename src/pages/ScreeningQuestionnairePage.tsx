@@ -1,6 +1,5 @@
 // SPDX-FileCopyrightText: Copyright Orangebot, Inc. and Medplum contributors
 // SPDX-License-Identifier: Apache-2.0
-import { getQuestionnaireAnswers } from '@medplum/core';
 import type { Questionnaire, QuestionnaireResponse } from '@medplum/fhirtypes';
 import { Document, QuestionnaireForm } from '@medplum/react';
 import { useState } from 'react';
@@ -9,9 +8,7 @@ import type { JSX } from 'react';
 export function ScreeningQuestionnairePage(): JSX.Element {
   const [isSubmitted, setIsSubmitted] = useState(false);
 
-  async function handleQuestionnaireSubmit(formData: QuestionnaireResponse): Promise<void> {
-    const answers = getQuestionnaireAnswers(formData);
-    console.log(answers);
+  async function handleQuestionnaireSubmit(_formData: QuestionnaireResponse): Promise<void> {
     setIsSubmitted(true);
     window.scrollTo(0, 0);
   }
