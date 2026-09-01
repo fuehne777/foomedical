@@ -9,7 +9,8 @@
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx --fix src",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest watch"
+    "test:watch": "vitest watch",
+    "check:phi": "vitest run src/security/noPhiInSource.test.ts"
   },
   "prettier": {
     "printWidth": 120,
@@ -36,6 +37,7 @@
     "@vitejs/plugin-react": "6.0.5",
     "chart.js": "4.5.1",
     "fast-json-patch": "3.1.1",
+    "jsdom": "30.0.1",
     "postcss": "8.5.26",
     "postcss-preset-mantine": "1.18.0",
     "react": "19.2.8",

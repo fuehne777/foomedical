@@ -84,12 +84,6 @@ const questionnaire: Questionnaire = {
           type: 'string',
         },
         {
-          linkId: 'ssn',
-          text: 'Social Security Number',
-          type: 'string',
-          required: true,
-        },
-        {
           linkId: 'race',
           text: 'Race',
           type: 'choice',

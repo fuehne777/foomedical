@@ -1,0 +1,29 @@
+---
+description: Ban real PHI from the app source, prompts, commits, logs, and fixtures
+alwaysApply: true
+---
+
+# No real patient data (PHI)
+
+This app may display the signed-in patient's own record from Medplum. It must never contain real patient data in source, tests, logs, comments, or fixtures.
+
+Forbidden in this repo and in anything written while working in it:
+
+- Real patient names
+- Medical record numbers (MRNs)
+- Dates of birth of real people
+- Social Security numbers
+- Any other real identifier or clinical fact tied to a real person
+
+Use synthetic data only. Fixture ids start with `example-`.
+
+```ts
+// BAD
+const patient = { name: 'Maria Santos', mrn: 'EHR-88421', birthDate: '1974-03-12' };
+console.log(answers);
+
+// GOOD
+const patient = { resourceType: 'Patient', id: 'example-1', name: [{ family: 'Doe', given: ['Jane'] }] };
+```
+
+Do not add intake fields that collect SSN. Do not log QuestionnaireResponse, Observation, or Patient bodies. If real PHI appears in an error or paste, redact it and replace with synthetic values before committing.
