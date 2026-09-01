@@ -8,8 +8,9 @@ Scope: this SPA and the FHIR calls it makes. Medplum hosted FHIR is trusted for 
 2. **This origin (Vercel).** Static files + SPA rewrite. No application server. Deploy headers, if any, live in `vercel.json`.
 3. **Medplum.** AccessPolicy, membership, and operation implementations are the only authorization.
 4. **Public SHL retrieval.** A generated SMART Health Link is redeemable without the portal session (`fetch` to the link URL).
+5. **GitHub Actions.** The secret/PHI scan jobs see the repo and `GITHUB_TOKEN`. They fail the push if patterns match. They do not sit on the FHIR path.
 
-Client search parameters (for example `PaymentNotice?request:Claim.patient=Patient/example-1`) are not an AccessPolicy.
+Client search parameters (for example `PaymentNotice?request:Claim.patient=Patient/example-1`) are not an AccessPolicy. A green `check:phi` / gitleaks run is not an AccessPolicy either.
 
 ## STRIDE snapshot
 
@@ -19,7 +20,7 @@ Client search parameters (for example `PaymentNotice?request:Claim.patient=Patie
 | T2 | SMART Health Link is a live PHI export | Public link + header menu | Open — [#3](https://github.com/fuehne777/foomedical/issues/3) |
 | T3 | Non-Patient profiles get the patient shell | `App.tsx` gate | Open — [#4](https://github.com/fuehne777/foomedical/issues/4) |
 | T4 | Full-resource `Patient` update | Profile form | Open — [#5](https://github.com/fuehne777/foomedical/issues/5) |
-| T5 | Screening / intake answers not persisted; were logged | Questionnaire pages | Partially reduced — [#6](https://github.com/fuehne777/foomedical/issues/6) |
+| T5 | Screening / intake answers not persisted; were logged; SSN item removed | Questionnaire pages + CI scan | Partially reduced — [#6](https://github.com/fuehne777/foomedical/issues/6) |
 | T6 | Patient vitals look clinical; were logged | `Observation` create | Partially reduced — [#7](https://github.com/fuehne777/foomedical/issues/7) |
 | T7 | Defaults register into the shared demo project | `.env.defaults` | Open — [#8](https://github.com/fuehne777/foomedical/issues/8) |
 | T8 | First `Schedule` in the project | Get Care | Open — [#2](https://github.com/fuehne777/foomedical/issues/2) |
@@ -51,15 +52,17 @@ Home hero **Get Care** now routes to `/get-care`, so this path is reachable from
 
 ### T5 — Screening and intake
 
-`/screening-questionnaire` and `/patient-intake-questionnaire` show thank-you and drop the `QuestionnaireResponse`. `/Questionnaire/:id` is the persist path. PR #11 removed `console.log` of screening answers. Residual: persist or mark as non-clinical demos.
+`/screening-questionnaire` and `/patient-intake-questionnaire` show thank-you and drop the `QuestionnaireResponse`. `/Questionnaire/:id` is the persist path. PR #11 removed `console.log` of screening answers and the Social Security Number item from intake. The form still collects other identifiers (for example date of birth and phone) in the browser, then discards the response.
+
+`src/security/noPhiInSource.test.ts` (`npm run check:phi`) and `.github/workflows/secret-and-phi-scan.yml` fail CI if `src/` grows `console.log` / `debug` / `info` / `dir`, an SSN field, or a hardcoded `birthDate` other than the synthetic `1990-01-01` fixture. That is repo hygiene. Residual: persist or mark as non-clinical demos ([#6](https://github.com/fuehne777/foomedical/issues/6)).
 
 ### T6 — Patient-entered vitals
 
-Vitals `createResource` an `Observation` with `status: 'preliminary'` and no performer/category that marks it patient-entered. Blood-pressure components are hard-coded to diastolic LOINC. PR #11 removed `console.log(formData)`. Create still `.catch(console.error)`, which can print FHIR OperationOutcome text.
+Vitals `createResource` an `Observation` with `status: 'preliminary'` and no performer/category that marks it patient-entered. Blood-pressure components are hard-coded to diastolic LOINC. PR #11 removed `console.log(formData)`. Create still `.catch(console.error)`, which can print FHIR OperationOutcome text. The source scan does not flag `console.error`.
 
 ### T7 — Demo project defaults
 
-First `npm run dev` copies `.env.defaults` to `.env`. The committed project id is a shared demo. Local register can create patients there.
+First `npm run dev` copies `.env.defaults` to `.env`. The committed project id is a shared demo. Local register can create patients there. Gitleaks allowlists the published Google / reCAPTCHA site keys so those public-by-design values do not fail the secret scan. Private keys, tokens, and `.env` files are still flagged. The allowlist does not make the shared project id safe ([#8](https://github.com/fuehne777/foomedical/issues/8)).
 
 ### T9 — PaymentNotice scope
 
@@ -73,7 +76,7 @@ That matches Coverage-style hygiene. It is still a client query. Least-privilege
 
 ### T10 — Deploy headers
 
-`vercel.json` only rewrites unknown paths to `/`. No CSP, HSTS, `X-Content-Type-Options`, or referrer policy. Google Identity Services is loaded from `accounts.google.com` in `index.html`. Tokens are in the browser, so XSS is full session theft. Ignoring `.vercel` keeps local deploy metadata out of git; it does not add headers.
+`vercel.json` only rewrites unknown paths to `/`. No CSP, HSTS, `X-Content-Type-Options`, or referrer policy. Google Identity Services is loaded from `accounts.google.com` in `index.html`. Tokens are in the browser, so XSS is full session theft. Ignoring `.vercel` keeps local deploy metadata out of git; it does not add headers. The GitHub Actions secret/PHI scan does not set deploy headers. Action refs are floating tags (`actions/checkout@v4`, `actions/setup-node@v4`, `gitleaks/gitleaks-action@v2`), not commit SHAs.
 
 ### T11 — Home CTAs
 
@@ -89,4 +92,5 @@ That matches Coverage-style hygiene. It is still a client query. Least-privilege
 
 - Encoding appointment hours or clinical eligibility in `App.tsx`
 - Treating client search filters as AccessPolicy
+- Treating `check:phi` or gitleaks as AccessPolicy or as proof that runtime PHI cannot leave the tab
 - Putting real questionnaire answers or chart rows in fixtures, issues, or review comments
