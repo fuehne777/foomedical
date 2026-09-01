@@ -1,0 +1,11 @@
+# Allow only public-by-design client identifiers from the sample .env.defaults.
+# Private keys, tokens, and .env files are still flagged.
+title = "Foo Medical"
+
+[allowlist]
+description = "Published OAuth/reCAPTCHA site keys, not secrets"
+paths = ['''^\.env\.defaults$''']
+regexes = [
+  '''921088377005-3j1sa10vr6hj86jgmdfh2l53v3mp7lfi\.apps\.googleusercontent\.com''',
+  '''6LfFd_8gAAAAAOCVrZQ_aF2CN5b7s91NEYIu5GxL''',
+]
